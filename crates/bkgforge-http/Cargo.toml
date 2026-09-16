@@ -1,0 +1,10 @@
+[package]
+name = "bkgforge-http"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+[dependencies]
+bkgforge-security = { path = "../bkgforge-security" }
+bkgforge-trace = { path = "../bkgforge-trace" }
+[lints]
+workspace = true

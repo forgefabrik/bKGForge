@@ -31,6 +31,43 @@ pub fn decide(event: &SecurityEvent) -> SecurityDecision {
         SecurityDecision::Allow
     }
 }
+/// Shared outbound-network policy for HTTP and browser adapters.
+#[derive(Clone, Debug, Default, Eq, PartialEq)]
+pub struct NetworkPolicy {
+    pub allow_private: bool,
+}
+impl NetworkPolicy {
+    /// Checks a parsed host before connecting. Hostname resolution must be performed by adapters.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error when the target is local and private targets are not allowed.
+    pub fn check_host(&self, host: &str) -> Result<(), String> {
+        if self.allow_private {
+            return Ok(());
+        }
+        let blocked = host == "localhost"
+            || host == "::1"
+            || host.starts_with("127.")
+            || host.starts_with("10.")
+            || host.starts_with("192.168.")
+            || host.starts_with("169.254.")
+            || host.starts_with("fc")
+            || host.starts_with("fd")
+            || host.starts_with("fe80:")
+            || host.split('.').nth(1) == Some("16") && host.starts_with("172.")
+            || (host.starts_with("172.")
+                && matches!(
+                    host.split('.').nth(1).and_then(|n| n.parse::<u8>().ok()),
+                    Some(16..=31)
+                ));
+        if blocked {
+            Err(format!("SSRF policy rejected host {host}"))
+        } else {
+            Ok(())
+        }
+    }
+}
 #[cfg(test)]
 mod tests {
     use super::*;

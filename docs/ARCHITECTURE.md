@@ -2,7 +2,7 @@
 
 ## Status
 
-This document records the repository state after M1, **Discovery Domain Foundation**. It is not a claim that HTTP, browser discovery, traces, schemas, or generators exist.
+This document records M0/M1 plus the M2 trace foundation and M3 capture contracts. It does not claim endpoint discovery, schemas, or generators.
 
 ## Reviewed workspace
 
@@ -14,6 +14,9 @@ This document records the repository state after M1, **Discovery Domain Foundati
 | `bkgforge-lanes` | Logical lanes and resource rebinding. | A lane retains identity across a rebind. |
 | `bkgforge-security` | Normalized event decision policy. | Repeated failures block. |
 | `bkgforge-discovery` | Discovery request/job/result contracts and lifecycle transitions. | Completion, failure, and invalid transition paths. |
+| `bkgforge-trace` | Versioned sanitized trace contracts, store, and replay input. | Header sanitization and replay-store tests. |
+| `bkgforge-http` | HTTP/1.1 capture transport protected by common outbound policy. | SSRF loopback rejection and method mapping. |
+| `bkgforge-browser` | Provider-neutral session/accessibility/browser backend contracts. | Browser navigation policy check. |
 | `bkgforge-runtime` | Composition root, security gates, lane and discovery registration. | Blocked lane and approved discovery registration. |
 | `bkgforge-cli` | Native `status` and `doctor` commands. | Exercised through command execution; no CLI unit test yet. |
 
