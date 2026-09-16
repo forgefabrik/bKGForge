@@ -1,0 +1,13 @@
+[package]
+name = "bkgforge-cli"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[dependencies]
+bkgforge-core = { path = "../../crates/bkgforge-core" }
+bkgforge-resources = { path = "../../crates/bkgforge-resources" }
+bkgforge-runtime = { path = "../../crates/bkgforge-runtime" }
+
+[lints]
+workspace = true
