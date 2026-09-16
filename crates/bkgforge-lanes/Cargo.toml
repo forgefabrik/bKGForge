@@ -1,0 +1,12 @@
+[package]
+name = "bkgforge-lanes"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[dependencies]
+bkgforge-core = { path = "../bkgforge-core" }
+bkgforge-resources = { path = "../bkgforge-resources" }
+
+[lints]
+workspace = true

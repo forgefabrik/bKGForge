@@ -1,0 +1,25 @@
+[workspace]
+resolver = "2"
+members = [
+    "crates/bkgforge-core",
+    "crates/bkgforge-discovery",
+    "crates/bkgforge-workflow",
+    "crates/bkgforge-resources",
+    "crates/bkgforge-lanes",
+    "crates/bkgforge-security",
+    "crates/bkgforge-runtime",
+    "apps/bkgforge-cli",
+]
+
+[workspace.package]
+version = "0.1.0"
+edition = "2024"
+license = "Apache-2.0"
+repository = "https://github.com/bkgforge/bkgforge"
+
+[workspace.lints.rust]
+unsafe_code = "forbid"
+
+[workspace.lints.clippy]
+all = "warn"
+pedantic = "warn"
