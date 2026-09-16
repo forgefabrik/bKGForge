@@ -11,16 +11,6 @@ pub struct LaneId(pub String);
 pub struct WorkflowId(pub String);
 #[derive(Clone, Debug, Eq, PartialEq, Ord, PartialOrd, Hash)]
 pub struct SecretRef(pub String);
-#[derive(Clone, Debug, Eq, PartialEq, Ord, PartialOrd, Hash)]
-pub struct DiscoveryId(pub String);
-#[derive(Clone, Debug, Eq, PartialEq, Ord, PartialOrd, Hash)]
-pub struct SiteId(pub String);
-#[derive(Clone, Debug, Eq, PartialEq, Ord, PartialOrd, Hash)]
-pub struct EndpointId(pub String);
-#[derive(Clone, Debug, Eq, PartialEq, Ord, PartialOrd, Hash)]
-pub struct TraceId(pub String);
-#[derive(Clone, Debug, Eq, PartialEq, Ord, PartialOrd, Hash)]
-pub struct ArtifactId(pub String);
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum ResourceState {
@@ -68,59 +58,6 @@ pub enum ExecutionPath {
     Simulation,
 }
 
-/// Provider-neutral lifecycle for work that discovers a source into a model.
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
-pub enum DiscoveryState {
-    Created,
-    Validating,
-    Provisioning,
-    Capturing,
-    Analyzing,
-    Modeling,
-    Generating,
-    Completed,
-    Failed,
-    Cancelled,
-}
-impl DiscoveryState {
-    #[must_use]
-    pub const fn terminal(self) -> bool {
-        matches!(self, Self::Completed | Self::Failed | Self::Cancelled)
-    }
-
-    #[must_use]
-    pub const fn can_transition_to(self, next: Self) -> bool {
-        matches!(
-            (self, next),
-            (Self::Created, Self::Validating | Self::Cancelled)
-                | (
-                    Self::Validating,
-                    Self::Provisioning | Self::Failed | Self::Cancelled
-                )
-                | (
-                    Self::Provisioning,
-                    Self::Capturing | Self::Failed | Self::Cancelled
-                )
-                | (
-                    Self::Capturing,
-                    Self::Analyzing | Self::Failed | Self::Cancelled
-                )
-                | (
-                    Self::Analyzing,
-                    Self::Modeling | Self::Failed | Self::Cancelled
-                )
-                | (
-                    Self::Modeling,
-                    Self::Generating | Self::Failed | Self::Cancelled
-                )
-                | (
-                    Self::Generating,
-                    Self::Completed | Self::Failed | Self::Cancelled
-                )
-        )
-    }
-}
-
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct Resource {
     pub id: ResourceId,
@@ -149,19 +86,10 @@ impl ResourceRequirements {
 
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub enum DomainError {
-    ResourceUnavailable {
-        kind: String,
-    },
-    InvalidTransition {
-        from: LaneState,
-        to: LaneState,
-    },
+    ResourceUnavailable { kind: String },
+    InvalidTransition { from: LaneState, to: LaneState },
     Validation(String),
     SecurityBlocked(String),
-    InvalidDiscoveryTransition {
-        from: DiscoveryState,
-        to: DiscoveryState,
-    },
 }
 impl Display for DomainError {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
@@ -173,9 +101,6 @@ impl Display for DomainError {
                 write!(f, "invalid lane transition: {from:?} -> {to:?}")
             }
             Self::Validation(message) | Self::SecurityBlocked(message) => f.write_str(message),
-            Self::InvalidDiscoveryTransition { from, to } => {
-                write!(f, "invalid discovery transition: {from:?} -> {to:?}")
-            }
         }
     }
 }

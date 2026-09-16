@@ -2,7 +2,6 @@
 resolver = "2"
 members = [
     "crates/bkgforge-core",
-    "crates/bkgforge-discovery",
     "crates/bkgforge-workflow",
     "crates/bkgforge-resources",
     "crates/bkgforge-lanes",

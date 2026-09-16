@@ -20,8 +20,8 @@ fn main() -> ExitCode {
         "status" => {
             let status = runtime().status();
             println!(
-                "bkgForge status\nready_resources: {}\nactive_lanes: {}\ndiscovery_jobs: {}",
-                status.ready_resources, status.active_lanes, status.discovery_jobs
+                "bkgForge status\nready_resources: {}\nactive_lanes: {}",
+                status.ready_resources, status.active_lanes
             );
             ExitCode::SUCCESS
         }

@@ -6,7 +6,6 @@ license.workspace = true
 
 [dependencies]
 bkgforge-core = { path = "../bkgforge-core" }
-bkgforge-discovery = { path = "../bkgforge-discovery" }
 bkgforge-lanes = { path = "../bkgforge-lanes" }
 bkgforge-resources = { path = "../bkgforge-resources" }
 bkgforge-security = { path = "../bkgforge-security" }
