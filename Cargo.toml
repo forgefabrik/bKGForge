@@ -6,6 +6,10 @@ members = [
     "crates/bkgforge-resources",
     "crates/bkgforge-lanes",
     "crates/bkgforge-security",
+    "crates/bkgforge-discovery",
+    "crates/bkgforge-trace",
+    "crates/bkgforge-http",
+    "crates/bkgforge-browser",
     "crates/bkgforge-runtime",
     "apps/bkgforge-cli",
 ]

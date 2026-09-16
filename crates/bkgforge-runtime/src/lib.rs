@@ -1,6 +1,7 @@
 //! Composition root for bkgForge services.
 
 use bkgforge_core::{DomainError, LaneId, ResourceRequirements, WorkflowId};
+use bkgforge_discovery::DiscoveryJob;
 use bkgforge_lanes::Lane;
 use bkgforge_resources::ResourcePool;
 use bkgforge_security::{SecurityDecision, SecurityEvent, decide};
@@ -8,6 +9,7 @@ use bkgforge_security::{SecurityDecision, SecurityEvent, decide};
 pub struct Runtime {
     pub resources: ResourcePool,
     pub lanes: Vec<Lane>,
+    pub discovery_jobs: Vec<DiscoveryJob>,
 }
 impl Runtime {
     #[must_use]
@@ -15,7 +17,32 @@ impl Runtime {
         Self {
             resources,
             lanes: Vec::new(),
+            discovery_jobs: Vec::new(),
         }
+    }
+    /// Security-gated admission for M1 discovery jobs; execution is owned by later adapters.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error when security rejects the request or its lifecycle cannot advance.
+    pub fn register_discovery(
+        &mut self,
+        mut job: DiscoveryJob,
+        event: &SecurityEvent,
+    ) -> Result<&DiscoveryJob, DomainError> {
+        match decide(event) {
+            SecurityDecision::Block | SecurityDecision::Pause | SecurityDecision::HumanReview => {
+                return Err(DomainError::SecurityBlocked(
+                    "discovery security gate rejected request".into(),
+                ));
+            }
+            _ => {}
+        }
+        job.transition(bkgforge_core::DiscoveryState::Validating)?;
+        self.discovery_jobs.push(job);
+        self.discovery_jobs
+            .last()
+            .ok_or_else(|| DomainError::Validation("discovery insertion failed".into()))
     }
     /// Applies security policy then starts a lane with a resource binding.
     ///
