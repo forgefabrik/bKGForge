@@ -9,7 +9,7 @@
 | M0 | Inventory and architecture freeze | Complete; recorded in `ARCHITECTURE.md`. |
 | M1 | Discovery domain foundation | Complete. |
 | M2 | Versioned trace, sanitization, persistence and replay contracts | Complete. |
-| M3 | HTTP capture, common SSRF policy, and browser contracts | In progress: HTTP transport and contracts are present; a pinned mini-browser protocol/runtime is still required. |
+| M3 | HTTP capture, common SSRF policy, and browser contracts | In progress: HTTP transport and contracts are present; a clean-room Rust Ego Lite backend still requires a real CDP transport/runtime. |
 | M4 | Neutral schemas and site model | Planned. |
 | M5 | Artifact model and OpenAPI 3.1 | Planned. |
 | M6 | Browser resource and browser network capture | Planned. |
