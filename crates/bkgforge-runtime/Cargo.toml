@@ -1,0 +1,15 @@
+[package]
+name = "bkgforge-runtime"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[dependencies]
+bkgforge-core = { path = "../bkgforge-core" }
+bkgforge-lanes = { path = "../bkgforge-lanes" }
+bkgforge-resources = { path = "../bkgforge-resources" }
+bkgforge-security = { path = "../bkgforge-security" }
+bkgforge-workflow = { path = "../bkgforge-workflow" }
+
+[lints]
+workspace = true
