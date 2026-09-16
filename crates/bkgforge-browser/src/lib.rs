@@ -1,5 +1,8 @@
 //! Provider-neutral browser contracts. Core remains independent of CDP and Ego Lite.
+use bkgforge_http::{CaptureClient, Method, Request};
 use bkgforge_security::NetworkPolicy;
+use std::collections::BTreeMap;
+use std::process::{Child, Command, Stdio};
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct Tab {
     pub id: String,
@@ -26,6 +29,9 @@ pub struct NetworkEvent {
 }
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum Capability {
+    BrowserLaunch,
+    BrowserConnect,
+    TargetDiscovery,
     Navigate,
     CurrentUrl,
     Snapshot,
@@ -39,6 +45,164 @@ pub enum Capability {
     Wait,
     Tabs,
     NetworkEvents,
+}
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum RuntimeMode {
+    Launched,
+    Connected,
+}
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct BrowserVersion {
+    pub product: String,
+    pub websocket_debugger_url: String,
+}
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct DiscoveredTarget {
+    pub target_id: String,
+    pub kind: String,
+    pub url: String,
+    pub title: String,
+}
+pub struct BrowserRuntime {
+    mode: RuntimeMode,
+    endpoint: String,
+    version: BrowserVersion,
+    child: Option<Child>,
+}
+impl BrowserRuntime {
+    /// Launches Chromium with CDP enabled, then verifies the live debugging endpoint.
+    ///
+    /// # Errors
+    /// Returns an error when Chromium cannot be started or does not expose CDP.
+    pub fn launch(executable: &str, port: u16) -> Result<Self, String> {
+        let child = Command::new(executable)
+            .args([
+                format!("--remote-debugging-port={port}"),
+                "--no-first-run".into(),
+                "--no-default-browser-check".into(),
+                "about:blank".into(),
+            ])
+            .stdin(Stdio::null())
+            .stdout(Stdio::null())
+            .stderr(Stdio::null())
+            .spawn()
+            .map_err(|error| format!("unable to launch Chromium: {error}"))?;
+        let endpoint = format!("http://127.0.0.1:{port}");
+        let version = fetch_version(&endpoint)?;
+        Ok(Self {
+            mode: RuntimeMode::Launched,
+            endpoint,
+            version,
+            child: Some(child),
+        })
+    }
+    /// Connects to a live Chromium CDP HTTP endpoint and verifies its version response.
+    ///
+    /// # Errors
+    /// Returns an error when the endpoint is unavailable or is not Chromium CDP.
+    pub fn connect(endpoint: impl Into<String>) -> Result<Self, String> {
+        let endpoint = endpoint.into().trim_end_matches('/').to_owned();
+        let version = fetch_version(&endpoint)?;
+        Ok(Self {
+            mode: RuntimeMode::Connected,
+            endpoint,
+            version,
+            child: None,
+        })
+    }
+    #[must_use]
+    pub const fn mode(&self) -> RuntimeMode {
+        self.mode
+    }
+    #[must_use]
+    pub fn version(&self) -> &BrowserVersion {
+        &self.version
+    }
+    /// Discovers live page targets through Chromium's CDP HTTP endpoint.
+    ///
+    /// # Errors
+    /// Returns an error when target discovery fails or the response is malformed.
+    pub fn targets(&self) -> Result<Vec<DiscoveredTarget>, String> {
+        let body = cdp_get(&self.endpoint, "/json/list")?;
+        Ok(parse_targets(&body))
+    }
+    #[must_use]
+    pub fn capabilities(&self) -> Vec<Capability> {
+        vec![
+            Capability::BrowserConnect,
+            Capability::TargetDiscovery,
+            if self.mode == RuntimeMode::Launched {
+                Capability::BrowserLaunch
+            } else {
+                Capability::BrowserConnect
+            },
+        ]
+    }
+    /// Terminates only a Chromium process created by this runtime.
+    ///
+    /// # Errors
+    /// Returns an error if the owned Chromium process cannot be terminated.
+    pub fn shutdown(&mut self) -> Result<(), String> {
+        if let Some(child) = &mut self.child {
+            child
+                .kill()
+                .map_err(|error| format!("unable to stop Chromium: {error}"))?;
+            let _ = child.wait();
+        }
+        self.child = None;
+        Ok(())
+    }
+}
+impl Drop for BrowserRuntime {
+    fn drop(&mut self) {
+        let _ = self.shutdown();
+    }
+}
+fn cdp_get(endpoint: &str, path: &str) -> Result<String, String> {
+    let exchange = CaptureClient::new(NetworkPolicy {
+        allow_private: true,
+    })
+    .execute(Request {
+        method: Method::Get,
+        url: format!("{endpoint}{path}"),
+        headers: BTreeMap::default(),
+        body: vec![],
+    })?;
+    if exchange.response.status != 200 {
+        return Err(format!(
+            "CDP endpoint returned HTTP {}",
+            exchange.response.status
+        ));
+    }
+    String::from_utf8(exchange.response.body).map_err(|_| "CDP response was not UTF-8 JSON".into())
+}
+fn fetch_version(endpoint: &str) -> Result<BrowserVersion, String> {
+    let json = cdp_get(endpoint, "/json/version")?;
+    Ok(BrowserVersion {
+        product: json_field(&json, "Browser").ok_or("CDP version response has no Browser field")?,
+        websocket_debugger_url: json_field(&json, "webSocketDebuggerUrl")
+            .ok_or("CDP version response has no webSocketDebuggerUrl field")?,
+    })
+}
+fn json_field(value: &str, key: &str) -> Option<String> {
+    let marker = format!("\"{key}\":\"");
+    let start = value.find(&marker)? + marker.len();
+    let tail = &value[start..];
+    let end = tail.find('"')?;
+    Some(tail[..end].replace("\\/", "/"))
+}
+fn parse_targets(json: &str) -> Vec<DiscoveredTarget> {
+    json.split("{\"")
+        .filter_map(|object| {
+            let value = format!("{{\"{object}");
+            Some(DiscoveredTarget {
+                target_id: json_field(&value, "id")?,
+                kind: json_field(&value, "type")?,
+                url: json_field(&value, "url")?,
+                title: json_field(&value, "title").unwrap_or_default(),
+            })
+        })
+        .collect()
 }
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub enum Key {

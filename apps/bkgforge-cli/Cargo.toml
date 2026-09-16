@@ -6,6 +6,7 @@ license.workspace = true
 
 [dependencies]
 bkgforge-core = { path = "../../crates/bkgforge-core" }
+bkgforge-browser = { path = "../../crates/bkgforge-browser" }
 bkgforge-resources = { path = "../../crates/bkgforge-resources" }
 bkgforge-runtime = { path = "../../crates/bkgforge-runtime" }
 
