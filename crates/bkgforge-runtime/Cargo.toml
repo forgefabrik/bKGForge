@@ -10,6 +10,7 @@ bkgforge-lanes = { path = "../bkgforge-lanes" }
 bkgforge-resources = { path = "../bkgforge-resources" }
 bkgforge-security = { path = "../bkgforge-security" }
 bkgforge-workflow = { path = "../bkgforge-workflow" }
+bkgforge-discovery = { path = "../bkgforge-discovery" }
 
 [lints]
 workspace = true
